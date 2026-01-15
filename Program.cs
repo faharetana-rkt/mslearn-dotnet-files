@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using System.Text;
 
 var currentDirectory = Directory.GetCurrentDirectory();
 var storesDirectory = Path.Combine(currentDirectory,"stores");
@@ -13,14 +14,33 @@ var salesTotal = CalculateSalestotal(salesFiles); // Calculate the total
 
 File.AppendAllText(Path.Combine(salesTotalDir, "totals.txt"), $"{salesTotal}{Environment.NewLine}");
 
+var summary = new StringBuilder();
+summary.AppendLine("Sales Summary");
+summary.AppendLine("-----------------------");
+summary.AppendLine($"Total sales: ${salesTotal:F2}");
+summary.AppendLine(" ");
+summary.AppendLine("Details:");
+foreach (var file in salesFiles)
+{
+    var parts = file.Split('\\');
+    string salesJson = File.ReadAllText(file);
+    SalesData? data = JsonConvert.DeserializeObject<SalesData?>(salesJson);
+    summary.AppendLine($"  {parts[parts.Length - 1]}: ${data?.Total}");
+}
+
+string sum = summary.ToString();
+
+File.AppendAllText(Path.Combine(salesTotalDir, "summary.txt"), sum);
+
 IEnumerable<string> FindFiles(string folderName)
 {
     List<string> salesFiles = new List<string>();
     var foundFiles = Directory.EnumerateFiles(folderName, "*", SearchOption.AllDirectories);
     foreach (var file in foundFiles)
     {
-        var extension = Path.GetExtension(file);
-        if (extension == ".json")
+        //var extension = Path.GetExtension(file);
+        //if (extension == ".json")
+        if (file.EndsWith("sales.json"))
         {
             salesFiles.Add(file);
         }
